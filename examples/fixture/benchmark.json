@@ -1,0 +1,31 @@
+{
+  "name": "arm-mini-fixture",
+  "description": "Tiny benchmark inspired by LongMemEval literal-span QA",
+  "corpora": {
+    "session_alice": "session_alice.json",
+    "session_noise": "session_noise.json"
+  },
+  "questions": [
+    {
+      "id": "q1_knowledge_update",
+      "text": "What laptop model does the user currently prefer?",
+      "category": "knowledge_update",
+      "gold_answer": "ThinkPad X1 Carbon",
+      "session_id": "session_alice"
+    },
+    {
+      "id": "q2_temporal",
+      "text": "When did the user renew their passport?",
+      "category": "temporal_reasoning",
+      "gold_answer": "March 2024",
+      "session_id": "session_alice"
+    },
+    {
+      "id": "q3_literal_noise",
+      "text": "What is the user's backup API key prefix?",
+      "category": "single_session",
+      "gold_answer": "sk-live-9f2",
+      "session_id": "session_noise"
+    }
+  ]
+}

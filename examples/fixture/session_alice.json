@@ -1,0 +1,35 @@
+{
+  "session_id": "session_alice",
+  "turns": [
+    {
+      "role": "user",
+      "content": "I'm thinking about upgrading from my MacBook Air.",
+      "session_id": "session_alice",
+      "turn_id": 0
+    },
+    {
+      "role": "assistant",
+      "content": "Happy to help compare options. What's your budget?",
+      "session_id": "session_alice",
+      "turn_id": 1
+    },
+    {
+      "role": "user",
+      "content": "I used to like the Dell XPS 13 but now I prefer the ThinkPad X1 Carbon for travel.",
+      "session_id": "session_alice",
+      "turn_id": 2
+    },
+    {
+      "role": "user",
+      "content": "Side note: I renewed my passport in March 2024 before the conference trip.",
+      "session_id": "session_alice",
+      "turn_id": 3
+    },
+    {
+      "role": "assistant",
+      "content": "Noted. I'll remember your travel docs timeline.",
+      "session_id": "session_alice",
+      "turn_id": 4
+    }
+  ]
+}

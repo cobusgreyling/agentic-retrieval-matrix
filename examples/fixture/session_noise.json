@@ -1,0 +1,29 @@
+{
+  "session_id": "session_noise",
+  "turns": [
+    {
+      "role": "user",
+      "content": "Unrelated: the weather in Seattle is rainy today.",
+      "session_id": "session_noise",
+      "turn_id": 0
+    },
+    {
+      "role": "user",
+      "content": "Please store my backup API key prefix sk-live-9f2 in the vault notes.",
+      "session_id": "session_noise",
+      "turn_id": 1
+    },
+    {
+      "role": "assistant",
+      "content": "Stored in vault notes. Do not share this prefix publicly.",
+      "session_id": "session_noise",
+      "turn_id": 2
+    },
+    {
+      "role": "user",
+      "content": "Random: I watched a documentary about penguins.",
+      "session_id": "session_noise",
+      "turn_id": 3
+    }
+  ]
+}
