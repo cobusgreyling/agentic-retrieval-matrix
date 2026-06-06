@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/arm-header.jpg" alt="Agentic Retrieval Matrix" width="100%">
+</p>
+
 # Agentic Retrieval Matrix (ARM)
 
 **Factorial benchmark for agentic search** — isolate how **retriever**, **result delivery**, and **agent harness** interact, inspired by [*Is Grep All You Need? How Agent Harnesses Reshape Agentic Search*](https://arxiv.org/abs/2605.15184) (arXiv:2605.15184).
