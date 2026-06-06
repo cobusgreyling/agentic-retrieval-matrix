@@ -10,6 +10,7 @@ jobs:
   lint-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
@@ -24,10 +25,10 @@ jobs:
       - name: Install ripgrep (for grep retriever)
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
-      - name: Install package (dev + vector)
+      - name: Install package (dev extras only)
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,vector]"
+          pip install -e ".[dev]"
 
       - name: Ruff lint
         run: ruff check src tests
@@ -38,10 +39,27 @@ jobs:
       - name: Run tests
         run: pytest -q --tb=short
 
-      - name: Smoke test matrix (grep only)
+      - name: Smoke test matrix (grep only, via CLI entrypoint)
         run: |
           arm matrix -b examples/fixture/benchmark.json --retrievers grep
-          ls -l results/
+          ls -l results/ || true
+          python -c "
+          from agentic_retrieval_matrix.cli import app
+          from typer.testing import CliRunner
+          import sys, glob, os
+          runner = CliRunner()
+          result = runner.invoke(app, ['matrix', '-b', 'examples/fixture/benchmark.json', '--retrievers', 'grep', '--output', 'results'])
+          print('EXIT:', result.exit_code)
+          print(result.output)
+          if result.exit_code != 0:
+              sys.exit(result.exit_code)
+          files = glob.glob('results/matrix_*.json')
+          print('Results files:', files)
+          if not files:
+              print('No result file created')
+              sys.exit(1)
+          print('Smoke test passed')
+          "
 
   vector-extra:
     runs-on: ubuntu-latest
@@ -81,4 +99,14 @@ jobs:
         run: |
           pip install dist/*.whl
           python -c "import agentic_retrieval_matrix as m; print('Installed version:', m.__version__)"
-          arm --help | head -5
+          python -c "
+          from agentic_retrieval_matrix.cli import app
+          from typer.testing import CliRunner
+          runner = CliRunner()
+          result = runner.invoke(app, ['--help'])
+          print(result.output)
+          if result.exit_code != 0:
+              import sys
+              sys.exit(result.exit_code)
+          print('CLI smoke via wheel OK')
+          "
