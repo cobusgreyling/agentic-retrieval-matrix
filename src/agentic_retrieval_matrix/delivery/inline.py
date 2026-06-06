@@ -15,10 +15,12 @@ class InlineDelivery(DeliveryChannel):
         if not result.hits:
             return f"[retrieval] query={result.query!r}\n(no hits)"
 
-        lines = [f"[retrieval] query={result.query!r}", f"backend={result.metadata.get('backend', 'n/a')}"]
+        lines = [
+            f"[retrieval] query={result.query!r}",
+            f"backend={result.metadata.get('backend', 'n/a')}",
+        ]
         for i, hit in enumerate(result.hits, start=1):
-            lines.append(
-                f"\n--- hit {i} (turn={hit.turn_id}, score={hit.score:.3f}, source={hit.source}) ---\n"
-                f"{hit.snippet}"
-            )
+            prefix = f"\n[hit {i}] turn={hit.turn_id} score={hit.score:.3f} src={hit.source}\n"
+            header = prefix + hit.snippet
+            lines.append(header)
         return "\n".join(lines)

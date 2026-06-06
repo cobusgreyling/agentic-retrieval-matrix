@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 
+from agentic_retrieval_matrix import __version__
 from agentic_retrieval_matrix.eval import (
     load_benchmark,
     load_longmemeval_subset,
@@ -23,7 +23,28 @@ app = typer.Typer(
 console = Console()
 
 
-def _parse_enum_list(raw: Optional[str], enum_cls, default):
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(f"arm {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show version and exit.",
+    ),
+) -> None:
+    """Agentic Retrieval Matrix CLI."""
+    pass  # pragma: no cover
+
+
+def _parse_enum_list(raw: str | None, enum_cls, default):
     if not raw:
         return default
     out = []
@@ -45,17 +66,17 @@ def matrix_cmd(
     ),
     output: Path = typer.Option(Path("results"), "--output", "-o", help="Results directory"),
     work_dir: Path = typer.Option(Path(".arm_runs"), "--work-dir", help="Scratch workspace"),
-    retrievers: Optional[str] = typer.Option(
+    retrievers: str | None = typer.Option(
         None,
         "--retrievers",
         help="Comma-separated: grep,vector",
     ),
-    deliveries: Optional[str] = typer.Option(
+    deliveries: str | None = typer.Option(
         None,
         "--deliveries",
         help="Comma-separated: inline,file",
     ),
-    harnesses: Optional[str] = typer.Option(
+    harnesses: str | None = typer.Option(
         None,
         "--harnesses",
         help="Comma-separated harness ids (default: react)",
@@ -100,15 +121,17 @@ def single_cmd(
         work_dir,
     )
     print_matrix_table(cells)
+    path = save_results(cells, Path("results"))
+    console.print(f"[green]Saved[/] {path}")
 
 
 @app.command("longmem")
 def longmem_cmd(
     data_dir: Path = typer.Option(..., "--data-dir", exists=True),
     output: Path = typer.Option(Path("results"), "--output", "-o"),
-    limit: Optional[int] = typer.Option(None, "--limit"),
-    retrievers: Optional[str] = typer.Option(None, "--retrievers"),
-    deliveries: Optional[str] = typer.Option(None, "--deliveries"),
+    limit: int | None = typer.Option(None, "--limit"),
+    retrievers: str | None = typer.Option(None, "--retrievers"),
+    deliveries: str | None = typer.Option(None, "--deliveries"),
 ):
     """Run matrix on a normalized LongMemEval subset directory."""
     questions, corpora = load_longmemeval_subset(data_dir, limit=limit)
@@ -116,7 +139,8 @@ def longmem_cmd(
     d = _parse_enum_list(deliveries, DeliveryKind, list(DeliveryKind))
     cells = run_matrix(questions, corpora, r, d, [HarnessKind.REACT])
     print_matrix_table(cells)
-    save_results(cells, output)
+    path = save_results(cells, output)
+    console.print(f"[green]Saved[/] {path}")
 
 
 if __name__ == "__main__":

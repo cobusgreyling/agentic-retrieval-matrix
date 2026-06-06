@@ -11,19 +11,28 @@ from agentic_retrieval_matrix.types import (
     DeliveryKind,
     MemoryCorpus,
     Question,
-    RetrieverKind,
     RunConfig,
 )
 
 
 class ReactHarness:
     """
-    Minimal ReAct-style loop without an LLM provider dependency.
+    Minimal non-LLM "harness" used as a strong extractive baseline.
 
-    Step 1: search memory with configured retriever.
-    Step 2: deliver results (inline or file).
-    Step 3 (file only): simulated read_file → inject snippets.
-    Step 4: extractive answer from evidence (gold-span friendly baseline).
+    This is *not* a full agentic ReAct loop with tool calling. It is deliberately
+    delivery-aware so the matrix can isolate the effect of *retriever* and
+    *delivery mechanism* while holding the "agent" logic constant.
+
+    - For INLINE: hits are presented directly; baseline picks best evidence span.
+    - For FILE: the harness still reads the JSON (simulating the required step)
+      and then uses the same extractive logic. A true LLM/tool harness would
+      receive only the instruction text in `presented` and would have to decide
+      to call a read tool itself.
+
+    Future harnesses (e.g. LangGraph, OpenAI Assistants, or a real ReAct LLM
+    loop under the [llm] extra) should register and respect the delivery
+    contract more literally by operating *only* on the string returned by
+    delivery.present().
     """
 
     def run(

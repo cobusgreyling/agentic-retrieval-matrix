@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from rich.console import Console
@@ -94,7 +94,7 @@ def run_matrix(
 
 def save_results(cells: list[MatrixCell], out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = out_dir / f"matrix_{ts}.json"
     payload = {
         "generated_at": ts,

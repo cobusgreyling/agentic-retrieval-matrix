@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class RetrieverKind(str, Enum):
+class RetrieverKind(StrEnum):
     GREP = "grep"
     VECTOR = "vector"
 
 
-class DeliveryKind(str, Enum):
+class DeliveryKind(StrEnum):
     INLINE = "inline"
     FILE = "file"
 
 
-class HarnessKind(str, Enum):
+class HarnessKind(StrEnum):
     REACT = "react"
 
 

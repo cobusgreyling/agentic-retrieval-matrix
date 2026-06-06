@@ -23,18 +23,18 @@ pip install -e .
 arm matrix -b examples/fixture/benchmark.json
 ```
 
-Example output:
+Example output (baseline extractive harness on fixture):
 
 ```
 ┏━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━┓
 ┃ Retriever ┃ Delivery ┃ Harness ┃ Accuracy ┃ N ┃
 ┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━┩
 │ grep      │ inline   │ react   │ 100.0%   │ 3 │
-│ grep      │ file     │ react   │ 66.7%    │ 3 │
+│ grep      │ file     │ react   │ 100.0%   │ 3 │
 └───────────┴──────────┴─────────┴──────────┴───┘
 ```
 
-On the bundled fixture, **inline grep ≥ file grep** — matching the paper’s direction that delivery mechanics matter.
+The current `react` harness is a strong *extractive baseline* (no LLM) that is deliberately delivery-aware. This lets the matrix isolate retriever × delivery effects. Real agent harnesses (LLM ReAct/tool-use) are expected to show larger differences between inline and file delivery. See "Baseline & Limitations".
 
 ## Quick start
 
@@ -42,6 +42,8 @@ On the bundled fixture, **inline grep ≥ file grep** — matching the paper’s
 cd agentic-retrieval-matrix
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+
+arm --version
 
 # Full matrix (grep only, no vector extras)
 arm matrix -b examples/fixture/benchmark.json
@@ -60,8 +62,25 @@ Results are written to `results/matrix_<timestamp>.json` with per-question trace
 
 1. **Memory as files** — conversation turns materialize to `turn_XXXX.txt` so grep is first-class (same mechanical advantage as agent CLIs).
 2. **Delivery is not retrieval** — identical hits, different surfacing → different accuracy (paper’s inline vs file split).
-3. **No API key required for v0** — the default harness uses an extractive baseline so CI and local runs work offline. Plug in your LLM harness when ready.
+3. **No API key required for baseline** — the default harness uses an extractive baseline so CI and local runs work offline. Plug in your LLM harness when ready.
 4. **Small core, clear extension points** — register retrievers, delivery channels, and harnesses without forking the runner.
+
+## Baseline & Limitations (v0.2)
+
+The bundled `react` harness is a *delivery-aware extractive oracle*:
+
+- It always receives the raw `RetrievalResult` hits internally.
+- For `file` delivery it reloads the written JSON (to simulate the extra step) but still uses gold-friendly span selection.
+- Therefore accuracy gaps between `inline` and `file` are currently small or zero on simple fixtures.
+
+This design choice makes the *retriever* and *delivery format* the primary variables under test while keeping the "reasoner" constant and reproducible without an LLM.
+
+When you add a real LLM harness (via the `[llm]` extra or a custom `Harness`), you should expect:
+
+- Larger `inline` vs `file` deltas (the agent must actually notice and act on the file path instruction).
+- Sensitivity to prompt, tool-use formatting, and max_steps.
+
+The fixture is deliberately tiny (3 questions). For research use LongMemEval or your own session corpus + a strong grader.
 
 ## Project layout
 
@@ -96,17 +115,59 @@ arm longmem --data-dir examples/longmemeval_subset --retrievers grep,vector --de
 
 ## Extending ARM
 
+### Add a retriever
+
+```python
+# my_retriever.py
+from pathlib import Path
+from agentic_retrieval_matrix.retrievers.base import Retriever
+from agentic_retrieval_matrix.types import MemoryCorpus, RetrievalResult, RunConfig, Hit
+
+class MyRetriever(Retriever):
+    kind = "my"
+
+    def index(self, corpus: MemoryCorpus, memory_root: Path) -> None:
+        ...
+
+    def search(self, query: str, config: RunConfig) -> RetrievalResult:
+        ...
+```
+
+Then register:
+
+```python
+# in your entry or a harness package
+from agentic_retrieval_matrix.retrievers import RETRIEVER_REGISTRY
+from my_retriever import MyRetriever
+from agentic_retrieval_matrix.types import RetrieverKind
+
+# extend the enum or use a string-based registry in future versions
+RETRIEVER_REGISTRY[RetrieverKind("my")] = MyRetriever   # or add to enum
+```
+
+Similar pattern for `DeliveryChannel` and harnesses (implement the `run` method and add to `HARNESS_REGISTRY`).
+
 ### Add a harness (e.g. LangGraph, provider CLI wrapper)
 
-Implement `run(question, corpus, config, memory_root) -> AgentAnswer` and register in `harness/__init__.py`.
+Implement a class with `def run(self, question, corpus, config, memory_root) -> AgentAnswer` and register in `harness/__init__.py`.
 
 ### Add LLM grading
 
-Replace `eval/grader.py` or add `--llm-grader` using the `[llm]` extra (OpenAI-compatible).
+Replace `eval/grader.py` or extend the matrix runner to support `--llm-grader` (the `[llm]` extra provides OpenAI-compatible clients).
 
 ### Noise sweep (Experiment 2)
 
-Materialize distractor sessions into `session_noise.json` corpora and sweep `benchmark.json` — a `noise-mem-stress` mode is the planned v0.2 command (`arm noise --ratio 0.3`).
+Materialize distractor sessions into `session_noise.json` corpora and sweep `benchmark.json`. A `noise` command is planned (`arm noise --ratio 0.3`). Contributions welcome.
+
+### Development commands
+
+```bash
+pip install -e ".[dev]"
+ruff check src tests
+ruff format src tests
+pytest -q
+arm matrix -b examples/fixture/benchmark.json
+```
 
 ## Related work
 

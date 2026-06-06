@@ -16,3 +16,5 @@ htmlcov/
 *.faiss
 *.index
 .DS_Store
+# Generated matrix run artifacts (example committed results may exist in history)
+results/matrix_*.json

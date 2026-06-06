@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install ripgrep (for grep retriever)
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install package (dev + vector)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,vector]"
+
+      - name: Ruff lint
+        run: ruff check src tests
+
+      - name: Ruff format check
+        run: ruff format --check src tests
+
+      - name: Run tests
+        run: pytest -q --tb=short
+
+      - name: Smoke test matrix (grep only)
+        run: |
+          arm matrix -b examples/fixture/benchmark.json --retrievers grep
+          ls -l results/
+
+  vector-extra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install with vector extra
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,vector]"
+      - name: Verify vector retriever import and basic run
+        run: |
+          python -c "
+          from agentic_retrieval_matrix.retrievers import build_retriever
+          from agentic_retrieval_matrix.types import RetrieverKind
+          r = build_retriever(RetrieverKind.VECTOR)
+          print('Vector retriever OK:', r.kind)
+          "
+          # Note: full matrix with vector is slower due to model load; optional in matrix cmd
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist/wheel
+        run: |
+          pip install build
+          python -m build
+          ls -l dist/
+      - name: Check install from wheel
+        run: |
+          pip install dist/*.whl
+          python -c "import agentic_retrieval_matrix as m; print('Installed version:', m.__version__)"
+          arm --help | head -5
