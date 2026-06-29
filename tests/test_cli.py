@@ -57,5 +57,5 @@ def test_cli_single_runs(tmp_path: Path):
 def test_cli_longmem_errors_on_missing(tmp_path: Path):
     result = runner.invoke(app, ["longmem", "--data-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    msg = (result.output or "").lower()
-    assert "longmemeval subset not found" in msg or "does not exist" in msg
+    msg = f"{result.output or ''} {result.exception or ''}".lower()
+    assert "longmemeval subset not found" in msg

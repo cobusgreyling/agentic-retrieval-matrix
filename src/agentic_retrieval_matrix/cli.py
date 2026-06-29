@@ -142,7 +142,7 @@ def single_cmd(
 
 @app.command("longmem")
 def longmem_cmd(
-    data_dir: Path = typer.Option(..., "--data-dir", exists=True),
+    data_dir: Path = typer.Option(..., "--data-dir"),
     output: Path = typer.Option(Path("results"), "--output", "-o"),
     limit: int | None = typer.Option(None, "--limit"),
     retrievers: str | None = typer.Option(None, "--retrievers"),
