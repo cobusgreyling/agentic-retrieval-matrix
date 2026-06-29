@@ -13,7 +13,7 @@ from agentic_retrieval_matrix.eval import (
     run_matrix,
     save_results,
 )
-from agentic_retrieval_matrix.types import DeliveryKind, HarnessKind, RetrieverKind
+from agentic_retrieval_matrix.types import AnswerMode, DeliveryKind, HarnessKind, RetrieverKind
 
 app = typer.Typer(
     name="arm",
@@ -81,6 +81,11 @@ def matrix_cmd(
         "--harnesses",
         help="Comma-separated harness ids (default: react)",
     ),
+    answer_mode: AnswerMode = typer.Option(
+        AnswerMode.BLIND,
+        "--answer-mode",
+        help="blind (default) or oracle (debug upper bound)",
+    ),
 ):
     """Run the full retrieval × delivery × harness matrix."""
     questions, corpora = load_benchmark(benchmark)
@@ -97,7 +102,15 @@ def matrix_cmd(
 
     h = _parse_enum_list(harnesses, HarnessKind, [HarnessKind.REACT])
 
-    cells = run_matrix(questions, corpora, r, d, h, work_dir)
+    cells = run_matrix(
+        questions,
+        corpora,
+        r,
+        d,
+        h,
+        work_dir,
+        answer_mode=answer_mode,
+    )
     print_matrix_table(cells)
     path = save_results(cells, output)
     console.print(f"[green]Saved[/] {path}")
@@ -109,6 +122,7 @@ def single_cmd(
     retriever: RetrieverKind = typer.Option(RetrieverKind.GREP, "--retriever", "-r"),
     delivery: DeliveryKind = typer.Option(DeliveryKind.INLINE, "--delivery", "-d"),
     work_dir: Path = typer.Option(Path(".arm_runs"), "--work-dir"),
+    answer_mode: AnswerMode = typer.Option(AnswerMode.BLIND, "--answer-mode"),
 ):
     """Run one configuration (fast iteration)."""
     questions, corpora = load_benchmark(benchmark)
@@ -119,6 +133,7 @@ def single_cmd(
         [delivery],
         [HarnessKind.REACT],
         work_dir,
+        answer_mode=answer_mode,
     )
     print_matrix_table(cells)
     path = save_results(cells, Path("results"))
@@ -127,7 +142,7 @@ def single_cmd(
 
 @app.command("longmem")
 def longmem_cmd(
-    data_dir: Path = typer.Option(..., "--data-dir", exists=True),
+    data_dir: Path = typer.Option(..., "--data-dir"),
     output: Path = typer.Option(Path("results"), "--output", "-o"),
     limit: int | None = typer.Option(None, "--limit"),
     retrievers: str | None = typer.Option(None, "--retrievers"),

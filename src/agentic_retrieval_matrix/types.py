@@ -20,6 +20,13 @@ class HarnessKind(StrEnum):
     REACT = "react"
 
 
+class AnswerMode(StrEnum):
+    """BLIND: question text only. ORACLE: may use gold (debug / upper bound)."""
+
+    BLIND = "blind"
+    ORACLE = "oracle"
+
+
 class Turn(BaseModel):
     role: str
     content: str
@@ -79,6 +86,7 @@ class RunConfig(BaseModel):
     retriever: RetrieverKind = RetrieverKind.GREP
     delivery: DeliveryKind = DeliveryKind.INLINE
     harness: HarnessKind = HarnessKind.REACT
+    answer_mode: AnswerMode = AnswerMode.BLIND
     max_steps: int = 3
     top_k: int = 5
     work_dir: str = ".arm_runs"
