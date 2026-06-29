@@ -31,3 +31,27 @@ def test_grep_full_matrix_on_fixture(tmp_path: Path):
     path = save_results(cells, out)
     assert path.exists()
     assert "matrix_" in path.name
+
+
+def test_grep_inline_beats_file_on_fixture(tmp_path: Path):
+    """Regression: blind harness must show delivery affects accuracy (paper axis)."""
+    questions, corpora = load_benchmark(FIXTURE / "benchmark.json")
+    cells = run_matrix(
+        questions,
+        corpora,
+        [RetrieverKind.GREP],
+        [DeliveryKind.INLINE, DeliveryKind.FILE],
+        [HarnessKind.REACT],
+        work_dir=tmp_path / "delivery",
+    )
+    by_delivery = {c.delivery: c for c in cells}
+    inline = by_delivery[DeliveryKind.INLINE]
+    file_cell = by_delivery[DeliveryKind.FILE]
+
+    assert inline.accuracy == 1.0
+    assert file_cell.accuracy < inline.accuracy
+    assert file_cell.accuracy == 2 / 3
+
+    failed = [d for d in file_cell.details if not d["correct"]]
+    assert len(failed) == 1
+    assert failed[0]["question_id"] == "q3_literal_noise"
