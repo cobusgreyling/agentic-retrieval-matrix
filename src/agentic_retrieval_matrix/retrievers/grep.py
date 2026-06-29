@@ -76,7 +76,8 @@ class GrepRetriever(Retriever):
         else:
             hits = self._fallback_python_search(terms)
 
-        hits.sort(key=lambda h: h.score, reverse=True)
+        # Tie-break on turn_id so identical ripgrep scores order consistently across OSes.
+        hits.sort(key=lambda h: (-h.score, h.turn_id))
         return RetrievalResult(
             query=query,
             hits=hits[: config.top_k],
